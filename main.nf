@@ -9,15 +9,16 @@ def toDirTuple = {  dir -> tuple(dir.name, dir) }
 etcs=Channel.fromPath("${INPUT}/etc/*", type: 'dir').map(toDirTuple) 
 traces=Channel.fromPath("${INPUT}/traces/*", type: 'dir').map(toDirTuple) 
 
+combinations=etcs.spread(traces)
+
 process simulate {
 
     disk '2 GB'
 
-    publishDir "${RESULTS}/${etcId}_${traceId}", mode: 'copy'
+    publishDir "${RESULTS}/${etcId}_${traceId}", mode: 'copy', overwrite: true
 
     input:
-    set etcId, etcDir from etcs
-    set traceId, traceDir from traces
+    set etcId, etcDir, traceId, traceDir from combinations
 
     output:
     set etcId, \
