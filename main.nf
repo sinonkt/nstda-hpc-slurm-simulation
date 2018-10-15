@@ -2,7 +2,7 @@
 
 HOME="/home/dev"
 INPUT="${HOME}/Code/input"
-RESULTS="${HOME}/Code/results"
+OUTPUT="${HOME}/Code/output"
 
 def toDirTuple = {  dir -> tuple(dir.name, dir) }
 
@@ -13,9 +13,9 @@ combinations=etcs.spread(traces)
 
 process simulate {
 
-    disk '2 GB'
+    disk '1 GB'
 
-    publishDir "${RESULTS}/${etcId}_${traceId}", mode: 'copy', overwrite: true
+    publishDir "${OUTPUT}/${etcId}_${traceId}", mode: 'copy', overwrite: true
 
     input:
     set etcId, etcDir, traceId, traceDir from combinations
@@ -23,6 +23,7 @@ process simulate {
     output:
     set etcId, \
         traceId, \
+        'trace.csv', \
         'jobcomp.log', \
         'sched.log', \
         'sdiag.out', \
@@ -42,6 +43,7 @@ process simulate {
     shell: 
     '''
     simulate !{etcDir} !{traceDir}
+    cp !{traceDir}/trace.csv trace.csv
     '''
 }
 
