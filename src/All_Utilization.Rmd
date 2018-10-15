@@ -1,0 +1,92 @@
+---
+title: "All Utilization"
+author: "Krittin Phornsiricharoenphant"
+date: "10/15/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source('./Utils.R')
+```
+
+```{r, echo=False}
+sacct_r <- read_sacct_out(file.path("~/output/test_test","jobcomp.log"))
+test=get_utilization(sacct_r, 500)
+summary(test)
+```
+
+## Load Data
+
+```{r}
+#Read jobs execution log
+sacct_base <- read_sacct_out(file.path("~/output/variant_test","jobcomp.log"))
+#Read backfill stats
+bf_base <- read_simstat_backfill(file.path("~/output/variant_test","simstat_backfill.csv"))
+
+```
+
+## Plotting Jobs Submittion and Execution Times
+
+Job's events plot. On y-axis is time on x-axis is JobID. Submittion time is shown by blue point and the job's execution is shown by line, line starts when the jobs starts and end at job end time.
+
+```{r , fig.width=7, fig.height=4}
+
+ggplot(sacct_base)+
+    geom_point(aes(x=local_job_id,y=Submit,colour="Submit Time"))+
+    geom_segment(aes(x=local_job_id,y=Start,xend=local_job_id,yend=End,colour="Run Time"))+
+    scale_colour_manual("",values = c("red","blue", "green"))+
+    xlab("JobID")+ylab("Time")
+
+```
+
+## Utilization
+
+Utilization of resource over time, lets also play with aggrigation duration
+
+```{r, fig.width=4, fig.height=3}
+util<-data.frame()
+for(dt in c(60L,1200L)){
+    util_tmp <- get_utilization(sacct_base,total_proc=120L,dt=dt)
+    util_tmp$dt<-dt
+    util <- rbind(util,util_tmp)
+    rm(util_tmp)
+}
+
+summary(util)
+
+ggplot(data=util)+xlab("Time")+ylab("Utilization")+
+    geom_line(aes(x=t,y=total_norm,color=factor(dt)))
+```
+
+## Average Waiting Time
+
+```{r, fig.width=7, fig.height=4}
+print(paste(
+    "Average Waiting Time:",
+        mean(as.integer(sacct_base$Start-sacct_base$Submit)/3600.0),
+    "Hours"
+))
+```
+
+## Backfill Performance
+
+Backfill scheduler usually place large number of jobs for execution, It also can take more than several minutes to run on large system. Performance of backfiller both in sence good job placement and time it takes to run can be of interest for resource providers. So here we simply plot some of back fill characteristics.
+
+```{r, fig.width=7, fig.height=4}
+grid.arrange(
+    
+    ggplot(bf_base,aes(x=t,y=run_sim_time))+ggtitle("Simulated")+
+        geom_point(size=1,colour="blue",alpha=0.25),
+    ggplot(bf_base,aes(x=last_depth_cycle_try_sched,y=run_sim_time))+ggtitle("Simulated")+
+        geom_point(size=1,colour="blue",alpha=0.25),
+    
+    ggplot(bf_base,aes(x=t,y=run_real_time))+ggtitle("Simulated Actual")+
+        geom_point(size=1,colour="blue",alpha=0.25),
+    ggplot(bf_base,aes(x=last_depth_cycle_try_sched,y=run_real_time))+ggtitle("Simulated Actual")+
+        geom_point(size=1,colour="blue",alpha=0.25),
+    ncol=2)
+```

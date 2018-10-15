@@ -5,6 +5,10 @@ works
 .nextflow
 output
 results
+.rstudio
+.bash_history
+./**/*.swp
+./**/*.swo
 
 #### joe made this: http://goel.io/joe
 
