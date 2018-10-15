@@ -6,6 +6,7 @@ works
 output
 results
 .rstudio
+.Rhistory
 .bash_history
 ./**/*.swp
 ./**/*.swo
